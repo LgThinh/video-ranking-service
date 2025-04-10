@@ -6,8 +6,8 @@ import (
 	"github.com/LgThinh/video-ranking-service/conf"
 	ginSwaggerDocs "github.com/LgThinh/video-ranking-service/docs"
 	handlers "github.com/LgThinh/video-ranking-service/pkg/handler"
-	"github.com/LgThinh/video-ranking-service/pkg/middlewares"
 	"github.com/LgThinh/video-ranking-service/pkg/repo"
+	"github.com/LgThinh/video-ranking-service/pkg/service"
 	limit "github.com/aviddiviner/gin-limit"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -43,21 +43,22 @@ func ApplicationV1Router(router *gin.Engine, db *gorm.DB, redisClient *redis.Cli
 	routerV1 := router.Group("/api/v1")
 
 	// Init repo
-	todoRepo := repo.NewRepoTodo(db)
+	videoRankingRepo := repo.NewVideoRankingRepo(db, redisClient)
+
+	// Init service
+	videoRankingService := service.NewVideoRankingService(videoRankingRepo)
+
 	// Init handler
 	migrateHandler := handlers.NewMigrationHandler(db)
-	todoHandler := handlers.NewTodoHandler(todoRepo)
+	videoRankingHandler := handlers.NewVideoRankingHandler(videoRankingService)
 
-	// APIs
-	// Migrate
-	routerV1.POST("/internal/migrate", middlewares.AuthManagerJWTMiddleware(), migrateHandler.MigratePublic)
-	// Todo
-	routerV1.POST("todo/create", middlewares.AuthManagerJWTMiddleware(), todoHandler.Create)
-	routerV1.POST("todo/get-one/:id", middlewares.AuthManagerJWTMiddleware(), todoHandler.Get)
-	routerV1.POST("todo/get-list", middlewares.AuthManagerJWTMiddleware(), todoHandler.List)
-	routerV1.POST("todo/update/:id", middlewares.AuthManagerJWTMiddleware(), todoHandler.Update)
-	routerV1.POST("todo/delete/:id", middlewares.AuthManagerJWTMiddleware(), todoHandler.Delete)
-	routerV1.POST("todo/hard-delete/:id", middlewares.AuthManagerJWTMiddleware(), todoHandler.HardDelete)
+	// Migrate api
+	routerV1.POST("/internal/migrate", migrateHandler.MigratePublic)
+
+	// Video Ranking Apis
+	routerV1.PUT("/score/update", videoRankingHandler.UpdateVideoScore)
+	routerV1.GET("/video-global", videoRankingHandler.GetTopVideoGlobal)
+	routerV1.GET("/video-personalized/:id", videoRankingHandler.GetTopVideoPersonalized)
 
 	// Swagger
 	ginSwaggerDocs.SwaggerInfo.Host = conf.GetConfig().SwaggerHost
