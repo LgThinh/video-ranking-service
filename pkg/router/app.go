@@ -1,4 +1,4 @@
-package service
+package router
 
 import (
 	"context"
@@ -24,15 +24,14 @@ import (
 	"time"
 )
 
-func NewService() {
+func NewRouter() {
 	router := gin.Default()
 	router.Use(limit.MaxAllowed(200))
 	configCors := cors.DefaultConfig()
 	configCors.AllowOrigins = []string{"*"}
 
-	// GetDB
-	db := GetDBPostgres()
-	redisClient := InitRedis()
+	db := initPostgres()
+	redisClient := initRedis()
 
 	router.Use(cors.New(configCors))
 	ApplicationV1Router(router, db, redisClient)
@@ -89,7 +88,7 @@ func startServer(router http.Handler) {
 	}
 }
 
-func GetDBPostgres() *gorm.DB {
+func initPostgres() *gorm.DB {
 	dsn := postgres.Open(fmt.Sprintf(
 		"host=%s port=%s user=%s dbname=%s password=%s sslmode=disable connect_timeout=5",
 		conf.GetConfig().DBHost,
@@ -124,7 +123,7 @@ func GetDBPostgres() *gorm.DB {
 	return db
 }
 
-func InitRedis() *redis.Client {
+func initRedis() *redis.Client {
 	options := &redis.Options{
 		Addr:     conf.GetConfig().RedisAddress,
 		Password: conf.GetConfig().RedisPassword,

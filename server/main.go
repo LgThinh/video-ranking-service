@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/LgThinh/video-ranking-service/conf"
-	"github.com/LgThinh/video-ranking-service/pkg/service"
+	"github.com/LgThinh/video-ranking-service/pkg/router"
 )
 
 // @securityDefinitions.apikey Authorization
@@ -14,5 +14,5 @@ import (
 // @name                       x-user-id
 func main() {
 	conf.LoadConfig()
-	service.NewService()
+	router.NewRouter()
 }

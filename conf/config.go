@@ -9,7 +9,7 @@ import (
 
 // AppConfig presents app conf
 type AppConfig struct {
-	AppName string `env:"APP_NAME" envDefault:"video-ranking-service"`
+	AppName string `env:"APP_NAME" envDefault:"video-ranking-router"`
 	Port    string `env:"PORT" envDefault:"8001"`
 	//DB CONFIG
 	LogFormat       string `env:"LOG_FORMAT" envDefault:"127.0.0.1"`

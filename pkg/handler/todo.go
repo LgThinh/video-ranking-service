@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-// TodoHandler is a struct that contains the Todo service
+// TodoHandler is a struct that contains the Todo router
 type TodoHandler struct {
 	obRepo repo.RepoTodoInterface
 }

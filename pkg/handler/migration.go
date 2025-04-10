@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/LgThinh/video-ranking-service/pkg/model"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
@@ -46,7 +47,9 @@ func (h *MigrationHandler) MigratePublic(ctx *gin.Context) {
 	}
 
 	models := []interface{}{
-		//&model.Admin{},
+		&model.User{},
+		&model.Video{},
+		&model.VideoCategory{},
 	}
 	if err := h.db.AutoMigrate(models...); err != nil {
 		_ = ctx.Error(err)
