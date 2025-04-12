@@ -2,11 +2,11 @@ package repo
 
 import (
 	"context"
-	"fmt"
+	"github.com/LgThinh/video-ranking-service/pkg/model"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
-	"strconv"
+	"time"
 )
 
 type VideoRankingRepo struct {
@@ -31,37 +31,77 @@ func NewVideoRankingRepo(videoRankingRepo *gorm.DB, redisClient *redis.Client) V
 }
 
 type VideoRankingRepoInterface interface {
-	UpdateGlobalRanking(ctx context.Context, videoID uuid.UUID, score float64)
-	IncreaseEntityPriority(ctx context.Context, entityID uuid.UUID, categoryID string)
-	GetGlobalRanking(ctx context.Context, limit int64) []redis.Z
-	GetPriority(ctx context.Context, entityID, categoryID string) int
-	GetCategoryIDByVideoID(ctx context.Context, videoID string) (string, error)
+	BeginTransaction() *gorm.DB
+	DBWithTimeout(ctx context.Context) (*gorm.DB, context.CancelFunc)
+	UpdateVideoScore(tx *gorm.DB, videoID uuid.UUID, score float64) error
+	GetVideoByID(tx *gorm.DB, videoID uuid.UUID) (*model.Video, error)
+	GetEntityPreference(tx *gorm.DB, entityID, categoryID uuid.UUID) (*model.EntityPreference, error)
+	UpdateEntityPreference(tx *gorm.DB, entityID, categoryID uuid.UUID, priority float64) error
+	GetTopVideoGlobal(tx *gorm.DB) (*[]model.Video, error)
 }
 
-func (r *VideoRankingRepo) UpdateGlobalRanking(ctx context.Context, videoID uuid.UUID, score float64) {
-	r.Redis.ZAdd(ctx, "ranking:global", redis.Z{
-		Score:  score,
-		Member: videoID.String(),
-	})
+func (r *VideoRankingRepo) UpdateVideoScore(tx *gorm.DB, videoID uuid.UUID, score float64) error {
+	scoreUpdate := map[string]interface{}{
+		"score":      score,
+		"updated_at": time.Now(),
+	}
+
+	err := tx.Model(&model.Video{}).Where("id = ?", videoID).Updates(&scoreUpdate).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (r *VideoRankingRepo) IncreaseEntityPriority(ctx context.Context, entityID uuid.UUID, categoryID string) {
-	priorityKey := fmt.Sprintf("priority:%s:%s", entityID.String(), categoryID)
-	r.Redis.IncrBy(ctx, priorityKey, 1)
+func (r *VideoRankingRepo) GetVideoByID(tx *gorm.DB, videoID uuid.UUID) (*model.Video, error) {
+	var video model.Video
+
+	err := tx.Model(&model.Video{}).Where("id = ?", videoID).First(&video).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &video, nil
 }
 
-func (r *VideoRankingRepo) GetGlobalRanking(ctx context.Context, limit int64) []redis.Z {
-	res, _ := r.Redis.ZRevRangeWithScores(ctx, "ranking:global", 0, limit-1).Result()
-	return res
+func (r *VideoRankingRepo) GetEntityPreference(tx *gorm.DB, entityID, categoryID uuid.UUID) (*model.EntityPreference, error) {
+	var entityPreference model.EntityPreference
+
+	err := tx.Model(&model.EntityPreference{}).Where("entity_id = ? AND category_id = ?", entityID, categoryID).First(&entityPreference).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &entityPreference, nil
 }
 
-func (r *VideoRankingRepo) GetPriority(ctx context.Context, entityID, categoryID string) int {
-	priorityKey := fmt.Sprintf("priority:%s:%s", entityID, categoryID)
-	priorityStr, _ := r.Redis.Get(ctx, priorityKey).Result()
-	priority, _ := strconv.Atoi(priorityStr)
-	return priority
+func (r *VideoRankingRepo) UpdateEntityPreference(tx *gorm.DB, entityID, categoryID uuid.UUID, priority float64) error {
+	var p model.EntityPreference
+
+	result := tx.First(&p, "entity_id = ? AND category_id = ?", entityID, categoryID)
+	if result.Error != nil {
+		tx.Create(&model.EntityPreference{
+			EntityID:   entityID,
+			CategoryID: categoryID,
+			Priority:   priority,
+		})
+	} else {
+		tx.Model(&model.EntityPreference{}).
+			Where("entity_id = ? AND category_id = ?", entityID, categoryID).
+			Update("priority", gorm.Expr("priority + ?", priority))
+	}
+
+	return nil
 }
 
-func (r *VideoRankingRepo) GetCategoryIDByVideoID(ctx context.Context, videoID string) (string, error) {
-	return r.Redis.HGet(ctx, "video:"+videoID, "category_id").Result()
+func (r *VideoRankingRepo) GetTopVideoGlobal(tx *gorm.DB) (*[]model.Video, error) {
+	var videos []model.Video
+
+	err := tx.Model(&model.Video{}).Order("score desc").Find(&videos).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &videos, nil
 }

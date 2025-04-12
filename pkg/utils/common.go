@@ -33,9 +33,15 @@ func BoolToInt(b bool) int {
 }
 
 func CalculateScore(interaction model.UpdateScoreVideo) float64 {
-	return float64(interaction.Views)*1.0 +
-		float64(interaction.Likes)*2.0 +
-		float64(interaction.Comments)*3.0 +
-		float64(interaction.Shares)*4.0 +
-		float64(interaction.WatchTime)*0.1
+	return float64(*interaction.Views)*1.0 +
+		float64(*interaction.Likes)*1.5 +
+		float64(*interaction.Comments)*2.0 +
+		float64(*interaction.Shares)*3.0 +
+		float64(*interaction.WatchTime)*0.1
+}
+
+func CalculatePriority(interaction model.UpdateScoreVideo) float64 {
+	return float64(*interaction.Views)*2.0 +
+		float64(*interaction.Likes)*1.0 +
+		float64(*interaction.Shares)*3.0
 }

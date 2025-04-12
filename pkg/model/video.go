@@ -16,9 +16,14 @@ type Video struct {
 }
 
 type UpdateScoreVideo struct {
-	Views     int `json:"views"`
-	Likes     int `json:"likes"`
-	Comments  int `json:"comments"`
-	Shares    int `json:"shares"`
-	WatchTime int `json:"watch_time"`
+	Views     *int `json:"views"`
+	Likes     *int `json:"likes"`
+	Comments  *int `json:"comments"`
+	Shares    *int `json:"shares"`
+	WatchTime *int `json:"watch_time"`
+}
+
+type ScoredVideo struct {
+	Video      Video   `json:"video"`
+	FinalScore float64 `json:"final_score"`
 }

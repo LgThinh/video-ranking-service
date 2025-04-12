@@ -64,7 +64,7 @@ func ApplicationV1Router(router *gin.Engine, db *gorm.DB, redisClient *redis.Cli
 	routerV1.POST("/internal/migrate", middlewares.AuthJWTMiddleware(), migrateHandler.MigratePublic)
 
 	// Video Ranking Apis
-	routerV1.PUT("/score/update/:id", videoRankingHandler.UpdateVideoScore)
+	routerV1.PUT("/score/update", videoRankingHandler.UpdateVideoScore)
 	routerV1.GET("/video-global", videoRankingHandler.GetTopVideoGlobal)
 	routerV1.GET("/video-personalized/:id", videoRankingHandler.GetTopVideoPersonalized)
 
