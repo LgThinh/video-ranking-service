@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"github.com/LgThinh/video-ranking-service/pkg/model"
 	"github.com/LgThinh/video-ranking-service/pkg/service"
+	"github.com/LgThinh/video-ranking-service/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -15,8 +17,30 @@ func NewVideoRankingHandler(videoRankingService service.VideoRankingServiceInter
 }
 
 func (h *VideoRankingHandler) UpdateVideoScore(ctx *gin.Context) {
+	var req model.UpdateScoreVideo
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-	ctx.JSON(http.StatusOK, "")
+	videoIDStr := ctx.GetHeader("x-video-id")
+	videoID, err := utils.ParseIDtoUUID(videoIDStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err})
+	}
+
+	entityIDStr := ctx.GetHeader("x-entity-id")
+	entityID, err := utils.ParseIDtoUUID(entityIDStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err})
+	}
+
+	err = h.videoRankingService.UpdateVideoScore(ctx, *videoID, *entityID, req)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err})
+	}
+
+	ctx.JSON(http.StatusOK, "Update video ranking success")
 }
 
 func (h *VideoRankingHandler) GetTopVideoGlobal(ctx *gin.Context) {

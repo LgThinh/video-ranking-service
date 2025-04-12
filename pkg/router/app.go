@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/LgThinh/video-ranking-service/conf"
 	ginSwaggerDocs "github.com/LgThinh/video-ranking-service/docs"
+	cron "github.com/LgThinh/video-ranking-service/pkg/cron/sync_db"
 	handlers "github.com/LgThinh/video-ranking-service/pkg/handler"
 	"github.com/LgThinh/video-ranking-service/pkg/middlewares"
 	"github.com/LgThinh/video-ranking-service/pkg/repo"
@@ -35,6 +36,12 @@ func NewRouter() {
 	redisClient := initRedis()
 
 	router.Use(cors.New(configCors))
+
+	err := cron.CronSync(db, redisClient)
+	if err != nil {
+		log.Println(err)
+	}
+
 	ApplicationV1Router(router, db, redisClient)
 	startServer(router)
 }

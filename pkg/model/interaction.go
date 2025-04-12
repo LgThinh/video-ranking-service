@@ -4,7 +4,7 @@ import "github.com/google/uuid"
 
 type Interaction struct {
 	BaseModel
-	UserID    uuid.UUID `json:"user_id" gorm:"type:uuid;not null"`
+	EntityID  uuid.UUID `json:"entity_id" gorm:"type:uuid;not null"`
 	VideoID   uuid.UUID `json:"video_id" gorm:"type:uuid;not null"`
 	View      bool      `json:"view" gorm:"default:false"`
 	Like      bool      `json:"like" gorm:"default:false"`
