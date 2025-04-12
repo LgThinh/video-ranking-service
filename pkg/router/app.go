@@ -71,7 +71,7 @@ func ApplicationV1Router(router *gin.Engine, db *gorm.DB, redisClient *redis.Cli
 	// Swagger
 	ginSwaggerDocs.SwaggerInfo.Host = conf.GetConfig().SwaggerHost
 	ginSwaggerDocs.SwaggerInfo.Title = conf.GetConfig().AppName
-	ginSwaggerDocs.SwaggerInfo.BasePath = routerV1.BasePath()
+	ginSwaggerDocs.SwaggerInfo.BasePath = "/api/v1"
 	ginSwaggerDocs.SwaggerInfo.Version = "v1"
 	ginSwaggerDocs.SwaggerInfo.Schemes = []string{"http", "https"}
 

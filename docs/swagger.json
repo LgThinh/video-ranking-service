@@ -4,7 +4,7 @@
         "contact": {}
     },
     "paths": {
-        "/internal/migrate": {
+        "/internal/migrate-public": {
             "post": {
                 "security": [
                     {
@@ -31,208 +31,199 @@
                 }
             }
         },
-        "/todo/create": {
-            "post": {
-                "security": [
-                    {
-                        "Authorization": []
-                    },
-                    {
-                        "User ID": []
-                    }
-                ],
-                "tags": [
-                    "TODO"
-                ],
-                "summary": "Create new TODO",
-                "parameters": [
-                    {
-                        "description": "New TODO",
-                        "name": "todo",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.TodoRequest"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/todo/delete/{id}": {
-            "delete": {
-                "security": [
-                    {
-                        "Authorization": []
-                    },
-                    {
-                        "User ID": []
-                    }
-                ],
-                "tags": [
-                    "TODO"
-                ],
-                "summary": "Delete TODO",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "id",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/todo/get-list/": {
-            "get": {
-                "security": [
-                    {
-                        "Authorization": []
-                    },
-                    {
-                        "User ID": []
-                    }
-                ],
-                "tags": [
-                    "TODO"
-                ],
-                "summary": "List TODO",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "size per page",
-                        "name": "page_size",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "page number (\u003e 0)",
-                        "name": "page",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "sort",
-                        "name": "sort",
-                        "in": "query"
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/todo/get-one/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "Authorization": []
-                    },
-                    {
-                        "User ID": []
-                    }
-                ],
-                "tags": [
-                    "TODO"
-                ],
-                "summary": "Get TODO",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "id todo",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/todo/hard-delete/{id}": {
-            "delete": {
-                "security": [
-                    {
-                        "Authorization": []
-                    },
-                    {
-                        "User ID": []
-                    }
-                ],
-                "tags": [
-                    "TODO"
-                ],
-                "summary": "HardDelete TODO",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "id",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/todo/update/{id}": {
+        "/score/update": {
             "put": {
-                "security": [
-                    {
-                        "Authorization": []
-                    },
-                    {
-                        "User ID": []
-                    }
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
                 ],
                 "tags": [
-                    "TODO"
+                    "Video Ranking"
                 ],
-                "summary": "Update TODO",
+                "summary": "Update Video Score",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "id",
-                        "name": "id",
-                        "in": "path",
+                        "description": "VideoID",
+                        "name": "x-video-id",
+                        "in": "header",
                         "required": true
                     },
                     {
-                        "description": "Update todo",
-                        "name": "todo",
+                        "type": "string",
+                        "description": "EntityID",
+                        "name": "x-entity-id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "UpdateScoreVideo",
+                        "name": "update_score",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.TodoRequest"
+                            "$ref": "#/definitions/model.UpdateScoreVideo"
                         }
                     }
                 ],
-                "responses": {}
+                "responses": {
+                    "200": {
+                        "description": "Update video ranking success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/video-global": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Video Ranking"
+                ],
+                "summary": "Get Top Global Videos",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Video"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/video-personalized/{entity_id}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Video Ranking"
+                ],
+                "summary": "Get Personalized Top Videos",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "EntityID",
+                        "name": "entity_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Video"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
             }
         }
     },
     "definitions": {
-        "model.TodoRequest": {
+        "model.UpdateScoreVideo": {
             "type": "object",
             "properties": {
-                "code": {
+                "comments": {
+                    "type": "integer"
+                },
+                "likes": {
+                    "type": "integer"
+                },
+                "shares": {
+                    "type": "integer"
+                },
+                "views": {
+                    "type": "integer"
+                },
+                "watch_time": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.Video": {
+            "type": "object",
+            "properties": {
+                "category_id": {
                     "type": "string"
                 },
-                "description": {
+                "comments": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "creator_id": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "is_active": {
-                    "type": "boolean"
+                "length": {
+                    "type": "integer"
                 },
-                "key": {
+                "likes": {
+                    "type": "integer"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "shares": {
+                    "type": "integer"
+                },
+                "title": {
                     "type": "string"
                 },
-                "name": {
+                "updated_at": {
                     "type": "string"
+                },
+                "updater_id": {
+                    "type": "string"
+                },
+                "views": {
+                    "type": "integer"
+                },
+                "watch_time": {
+                    "type": "integer"
                 }
             }
         }
@@ -243,9 +234,14 @@
             "name": "Authorization",
             "in": "header"
         },
-        "User ID": {
+        "EntityID": {
             "type": "apiKey",
-            "name": "x-user-id",
+            "name": "x-entity-id",
+            "in": "header"
+        },
+        "VideoID": {
+            "type": "apiKey",
+            "name": "x-video-id",
             "in": "header"
         }
     }

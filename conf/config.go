@@ -9,7 +9,7 @@ import (
 
 // AppConfig presents app conf
 type AppConfig struct {
-	AppName string `env:"APP_NAME" envDefault:"video-ranking-router"`
+	AppName string `env:"APP_NAME" envDefault:"Video Ranking Service"`
 	Port    string `env:"PORT" envDefault:"8001"`
 	//DB CONFIG
 	LogFormat       string `env:"LOG_FORMAT" envDefault:"127.0.0.1"`
@@ -31,7 +31,7 @@ type AppConfig struct {
 	// JWT Token
 	JWTAccessSecure string `env:"JWT_ACCESS_SECURE" envDefault:"myjwttokenaccess"`
 	// SWAGGER
-	SwaggerHost string `env:"SWAGGER_HOST" envDefault:"localhost"`
+	SwaggerHost string `env:"SWAGGER_HOST" envDefault:"localhost:8080"`
 	// REDIS
 	RedisAddress  string `env:"REDIS_ADDRESS" envDefault:"localhost:6379"`
 	RedisPassword string `env:"REDIS_PASSWORD" envDefault:"password"`

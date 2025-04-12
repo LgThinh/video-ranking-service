@@ -25,7 +25,7 @@ func NewVideoRankingHandler(videoRankingService service.VideoRankingServiceInter
 // @Param       x-entity-id header string	true "EntityID"
 // @Param       update_score body model.UpdateScoreVideo true "UpdateScoreVideo"
 // @Success     200 {string} string "Update video ranking success"
-// @Failure     400 {object} gin.H
+// @Failure     400 {object} map[string]interface{}
 // @Router		/score/update [put]
 func (h *VideoRankingHandler) UpdateVideoScore(ctx *gin.Context) {
 	var req model.UpdateScoreVideo
@@ -63,7 +63,7 @@ func (h *VideoRankingHandler) UpdateVideoScore(ctx *gin.Context) {
 // @Accept      json
 // @Produce     json
 // @Success     200 {array} model.Video
-// @Failure     400 {object} gin.H
+// @Failure     400 {object} map[string]interface{}
 // @Router      /video-global [get]
 func (h *VideoRankingHandler) GetTopVideoGlobal(ctx *gin.Context) {
 	topVideos, err := h.videoRankingService.GetGlobalRanking(ctx)
@@ -82,7 +82,7 @@ func (h *VideoRankingHandler) GetTopVideoGlobal(ctx *gin.Context) {
 // @Produce     json
 // @Param       entity_id path string true "EntityID"
 // @Success     200 {array} model.Video
-// @Failure     400 {object} gin.H
+// @Failure     400 {object} map[string]interface{}
 // @Router      /video-personalized/{entity_id} [get]
 func (h *VideoRankingHandler) GetTopVideoPersonalized(ctx *gin.Context) {
 	entityIDStr := ctx.Param("entity_id")
