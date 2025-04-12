@@ -13,7 +13,7 @@ import (
 	limit "github.com/aviddiviner/gin-limit"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/driver/postgres"
@@ -140,9 +140,9 @@ func initRedis() *redis.Client {
 	}
 
 	client := redis.NewClient(options)
+
 	ctx := context.Background()
-	_, err := client.Ping(ctx).Result()
-	if err != nil {
+	if _, err := client.Ping(ctx).Result(); err != nil {
 		log.Fatalf("Could not connect to Redis: %v", err)
 	}
 

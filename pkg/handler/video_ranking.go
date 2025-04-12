@@ -44,11 +44,14 @@ func (h *VideoRankingHandler) UpdateVideoScore(ctx *gin.Context) {
 }
 
 func (h *VideoRankingHandler) GetTopVideoGlobal(ctx *gin.Context) {
+	top := h.videoRankingService.GetGlobalRanking(ctx)
 
-	ctx.JSON(http.StatusOK, "")
+	ctx.JSON(http.StatusOK, top)
 }
 
 func (h *VideoRankingHandler) GetTopVideoPersonalized(ctx *gin.Context) {
+	entityID := ctx.Param("entity_id")
+	top := h.videoRankingService.GetEntityRanking(ctx, entityID)
 
-	ctx.JSON(http.StatusOK, "")
+	ctx.JSON(http.StatusOK, top)
 }

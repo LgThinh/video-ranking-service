@@ -21,6 +21,7 @@ func NewVideoRankingService(videoRankingRepo repo.VideoRankingRepoInterface) *Vi
 
 type VideoRankingServiceInterface interface {
 	UpdateVideoScore(ctx context.Context, videoID, entityID uuid.UUID, req model.UpdateScoreVideo) error
+	GetGlobalRanking(ctx context.Context) []string
 	GetEntityRanking(ctx context.Context, entityID string) []string
 }
 
@@ -28,6 +29,15 @@ func (s *VideoRankingService) UpdateVideoScore(ctx context.Context, videoID, ent
 	score := utils.CalculateScore(req)
 	s.videoRankingRepo.UpdateGlobalRanking(ctx, videoID, score)
 	return nil
+}
+
+func (s *VideoRankingService) GetGlobalRanking(ctx context.Context) []string {
+	videos := s.videoRankingRepo.GetGlobalRanking(ctx, 10)
+	ids := []string{}
+	for _, z := range videos {
+		ids = append(ids, z.Member.(string))
+	}
+	return ids
 }
 
 func (s *VideoRankingService) GetEntityRanking(ctx context.Context, entityID string) []string {
