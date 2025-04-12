@@ -26,7 +26,6 @@ func AuthJWTMiddleware() gin.HandlerFunc {
 			return signature, nil
 		})
 
-		// check permision user
 		if claims["role"] != "admin" {
 			c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
 			c.Abort()

@@ -6,6 +6,7 @@ import (
 	"github.com/LgThinh/video-ranking-service/conf"
 	ginSwaggerDocs "github.com/LgThinh/video-ranking-service/docs"
 	handlers "github.com/LgThinh/video-ranking-service/pkg/handler"
+	"github.com/LgThinh/video-ranking-service/pkg/middlewares"
 	"github.com/LgThinh/video-ranking-service/pkg/repo"
 	"github.com/LgThinh/video-ranking-service/pkg/service"
 	limit "github.com/aviddiviner/gin-limit"
@@ -53,7 +54,7 @@ func ApplicationV1Router(router *gin.Engine, db *gorm.DB, redisClient *redis.Cli
 	videoRankingHandler := handlers.NewVideoRankingHandler(videoRankingService)
 
 	// Migrate api
-	routerV1.POST("/internal/migrate", migrateHandler.MigratePublic)
+	routerV1.POST("/internal/migrate", middlewares.AuthJWTMiddleware(), migrateHandler.MigratePublic)
 
 	// Video Ranking Apis
 	routerV1.PUT("/score/update/:id", videoRankingHandler.UpdateVideoScore)
