@@ -22,13 +22,46 @@ func NewVideoRankingHandler(videoRankingService service.VideoRankingServiceInter
 // @Accept      json
 // @Produce     json
 // @Param       x-video-id header string true "VideoID"
-// @Param       x-entity-id header string	true "EntityID"
 // @Param       update_score body model.UpdateScoreVideo true "UpdateScoreVideo"
 // @Success     200 {string} string "Update video ranking success"
 // @Failure     400 {object} map[string]interface{}
 // @Router		/score/update [put]
 func (h *VideoRankingHandler) UpdateVideoScore(ctx *gin.Context) {
 	var req model.UpdateScoreVideo
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	videoIDStr := ctx.GetHeader("x-video-id")
+	videoID, err := utils.ParseIDtoUUID(videoIDStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+
+	err = h.videoRankingService.UpdateVideoScore(ctx, *videoID, req)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, "Update video ranking success")
+}
+
+// UpdateEntityPreference godoc
+// @Summary     Update Entity Preference
+// @Tags        Video Ranking
+// @Accept      json
+// @Produce     json
+// @Param       x-video-id header string true "VideoID"
+// @Param       x-entity-id header string	true "EntityID"
+// @Param       update_score body model.UpdateEntityPreference true "UpdateEntityPreference"
+// @Success     200 {string} string "Update entity preference success"
+// @Failure     400 {object} map[string]interface{}
+// @Router		/entity-preference/update [put]
+func (h *VideoRankingHandler) UpdateEntityPreference(ctx *gin.Context) {
+	var req model.UpdateEntityPreference
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -48,13 +81,13 @@ func (h *VideoRankingHandler) UpdateVideoScore(ctx *gin.Context) {
 		return
 	}
 
-	err = h.videoRankingService.UpdateVideoScore(ctx, *videoID, *entityID, req)
+	err = h.videoRankingService.UpdateEntityPreference(ctx, *videoID, *entityID, req)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, "Update video ranking success")
+	ctx.JSON(http.StatusOK, "Update entity preference success")
 }
 
 // GetTopVideoGlobal godoc
@@ -64,7 +97,7 @@ func (h *VideoRankingHandler) UpdateVideoScore(ctx *gin.Context) {
 // @Produce     json
 // @Success     200 {array} model.Video
 // @Failure     400 {object} map[string]interface{}
-// @Router      /video-global [get]
+// @Router      /video-global/list [get]
 func (h *VideoRankingHandler) GetTopVideoGlobal(ctx *gin.Context) {
 	topVideos, err := h.videoRankingService.GetGlobalRanking(ctx)
 	if err != nil {
@@ -80,12 +113,12 @@ func (h *VideoRankingHandler) GetTopVideoGlobal(ctx *gin.Context) {
 // @Tags        Video Ranking
 // @Accept      json
 // @Produce     json
-// @Param       entity_id path string true "EntityID"
+// @Param       x-entity-id header string	true "EntityID"
 // @Success     200 {array} model.Video
 // @Failure     400 {object} map[string]interface{}
-// @Router      /video-personalized/{entity_id} [get]
+// @Router      /video-personalized/list [get]
 func (h *VideoRankingHandler) GetTopVideoPersonalized(ctx *gin.Context) {
-	entityIDStr := ctx.Param("entity_id")
+	entityIDStr := ctx.GetHeader("x-entity-id")
 	entityID, err := utils.ParseIDtoUUID(entityIDStr)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err})

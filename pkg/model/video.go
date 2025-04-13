@@ -27,6 +27,14 @@ type UpdateScoreVideo struct {
 	WatchTime *int `json:"watch_time"`
 }
 
+type UpdateEntityPreference struct {
+	Views     *bool `json:"views"`
+	Likes     *bool `json:"likes"`
+	Comments  *bool `json:"comments"`
+	Shares    *bool `json:"shares"`
+	WatchTime *int  `json:"watch_time"`
+}
+
 type ScoredVideo struct {
 	Video      Video   `json:"video"`
 	FinalScore float64 `json:"final_score"`

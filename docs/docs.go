@@ -15,29 +15,56 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/internal/migrate-public": {
-            "post": {
-                "security": [
-                    {
-                        "Authorization": []
-                    },
-                    {
-                        "Access Token": []
-                    },
-                    {
-                        "Entity Key": []
-                    },
-                    {
-                        "User ID": []
-                    }
+        "/entity-preference/update": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
                 ],
                 "tags": [
-                    "internal"
+                    "Video Ranking"
                 ],
-                "summary": "Database migration",
+                "summary": "Update Entity Preference",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VideoID",
+                        "name": "x-video-id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "EntityID",
+                        "name": "x-entity-id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "UpdateEntityPreference",
+                        "name": "update_score",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateEntityPreference"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Update entity preference success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
                     }
                 }
             }
@@ -59,13 +86,6 @@ const docTemplate = `{
                         "type": "string",
                         "description": "VideoID",
                         "name": "x-video-id",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "EntityID",
-                        "name": "x-entity-id",
                         "in": "header",
                         "required": true
                     },
@@ -96,7 +116,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/video-global": {
+        "/video-global/list": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -128,7 +148,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/video-personalized/{entity_id}": {
+        "/video-personalized/list": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -144,8 +164,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "EntityID",
-                        "name": "entity_id",
-                        "in": "path",
+                        "name": "x-entity-id",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -171,6 +191,26 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "model.UpdateEntityPreference": {
+            "type": "object",
+            "properties": {
+                "comments": {
+                    "type": "boolean"
+                },
+                "likes": {
+                    "type": "boolean"
+                },
+                "shares": {
+                    "type": "boolean"
+                },
+                "views": {
+                    "type": "boolean"
+                },
+                "watch_time": {
+                    "type": "integer"
+                }
+            }
+        },
         "model.UpdateScoreVideo": {
             "type": "object",
             "properties": {

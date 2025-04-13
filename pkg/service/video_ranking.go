@@ -20,21 +20,31 @@ func NewVideoRankingService(videoRankingRepo repo.VideoRankingRepoInterface) *Vi
 }
 
 type VideoRankingServiceInterface interface {
-	UpdateVideoScore(ctx context.Context, videoID, entityID uuid.UUID, req model.UpdateScoreVideo) error
+	UpdateVideoScore(ctx context.Context, videoID uuid.UUID, req model.UpdateScoreVideo) error
+	UpdateEntityPreference(ctx context.Context, videoID, entityID uuid.UUID, req model.UpdateEntityPreference) error
 	GetGlobalRanking(ctx context.Context) (*[]model.Video, error)
 	GetEntityRanking(ctx context.Context, entityID uuid.UUID) (*[]model.Video, error)
 }
 
-func (s *VideoRankingService) UpdateVideoScore(ctx context.Context, videoID, entityID uuid.UUID, req model.UpdateScoreVideo) error {
-	txWithTimeout, cancel := s.videoRankingRepo.DBWithTimeout(ctx)
-	defer cancel()
-
+func (s *VideoRankingService) UpdateVideoScore(ctx context.Context, videoID uuid.UUID, req model.UpdateScoreVideo) error {
 	score := utils.CalculateScore(req)
 
-	err := s.videoRankingRepo.UpdateVideoScore(txWithTimeout, videoID, score)
+	err := s.videoRankingRepo.UpdateScoreInRedis(ctx, videoID, score)
 	if err != nil {
-		return nil
+		return err
 	}
+
+	err = s.videoRankingRepo.UpdateStatsInRedis(ctx, videoID, req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *VideoRankingService) UpdateEntityPreference(ctx context.Context, videoID, entityID uuid.UUID, req model.UpdateEntityPreference) error {
+	txWithTimeout, cancel := s.videoRankingRepo.DBWithTimeout(ctx)
+	defer cancel()
 
 	video, err := s.videoRankingRepo.GetVideoByID(txWithTimeout, videoID)
 	if err != nil {
@@ -43,6 +53,11 @@ func (s *VideoRankingService) UpdateVideoScore(ctx context.Context, videoID, ent
 
 	newPriority := utils.CalculatePriority(req)
 	err = s.videoRankingRepo.UpdateEntityPreference(txWithTimeout, entityID, video.CategoryID, newPriority)
+	if err != nil {
+		return nil
+	}
+
+	err = s.videoRankingRepo.UpsertInteraction(txWithTimeout, entityID, videoID, &req)
 	if err != nil {
 		return nil
 	}
@@ -63,22 +78,25 @@ func (s *VideoRankingService) GetGlobalRanking(ctx context.Context) (*[]model.Vi
 }
 
 func (s *VideoRankingService) GetEntityRanking(ctx context.Context, entityID uuid.UUID) (*[]model.Video, error) {
-	txWithTimeout, cancel := s.videoRankingRepo.DBWithTimeout(ctx)
+	tx, cancel := s.videoRankingRepo.DBWithTimeout(ctx)
 	defer cancel()
 
-	videos, err := s.videoRankingRepo.GetTopVideoGlobal(txWithTimeout)
+	videos, err := s.videoRankingRepo.GetTopVideoGlobal(tx)
 	if err != nil {
 		return nil, err
 	}
 
-	scored := []model.ScoredVideo{}
-	for _, video := range *videos {
-		entityPreference, err := s.videoRankingRepo.GetEntityPreference(txWithTimeout, entityID, video.CategoryID)
-		if err != nil {
-		}
+	scored := make([]model.ScoredVideo, 0, len(*videos))
 
-		entityPriority := 1.0 + float64(entityPreference.Priority)*0.01
-		finalScore := video.Score * entityPriority
+	for _, video := range *videos {
+		finalScore := video.Score
+
+		// Kiểm tra xem user có preference với category này không
+		entityPreference, err := s.videoRankingRepo.GetEntityPreference(tx, entityID, video.CategoryID)
+		if err == nil && entityPreference != nil {
+			entityPriority := 1.0 + float64(entityPreference.Priority)*0.01
+			finalScore = video.Score * entityPriority
+		}
 
 		scored = append(scored, model.ScoredVideo{
 			Video:      video,
@@ -86,6 +104,7 @@ func (s *VideoRankingService) GetEntityRanking(ctx context.Context, entityID uui
 		})
 	}
 
+	// Sắp xếp tất cả video theo finalScore
 	sort.Slice(scored, func(i, j int) bool {
 		return scored[i].FinalScore > scored[j].FinalScore
 	})

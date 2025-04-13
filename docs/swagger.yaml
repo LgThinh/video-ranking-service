@@ -1,4 +1,17 @@
 definitions:
+  model.UpdateEntityPreference:
+    properties:
+      comments:
+        type: boolean
+      likes:
+        type: boolean
+      shares:
+        type: boolean
+      views:
+        type: boolean
+      watch_time:
+        type: integer
+    type: object
   model.UpdateScoreVideo:
     properties:
       comments:
@@ -46,20 +59,7 @@ definitions:
 info:
   contact: {}
 paths:
-  /internal/migrate-public:
-    post:
-      responses:
-        "200":
-          description: OK
-      security:
-      - Authorization: []
-      - Access Token: []
-      - Entity Key: []
-      - User ID: []
-      summary: Database migration
-      tags:
-      - internal
-  /score/update:
+  /entity-preference/update:
     put:
       consumes:
       - application/json
@@ -72,6 +72,37 @@ paths:
       - description: EntityID
         in: header
         name: x-entity-id
+        required: true
+        type: string
+      - description: UpdateEntityPreference
+        in: body
+        name: update_score
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateEntityPreference'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Update entity preference success
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update Entity Preference
+      tags:
+      - Video Ranking
+  /score/update:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: VideoID
+        in: header
+        name: x-video-id
         required: true
         type: string
       - description: UpdateScoreVideo
@@ -95,7 +126,7 @@ paths:
       summary: Update Video Score
       tags:
       - Video Ranking
-  /video-global:
+  /video-global/list:
     get:
       consumes:
       - application/json
@@ -116,14 +147,14 @@ paths:
       summary: Get Top Global Videos
       tags:
       - Video Ranking
-  /video-personalized/{entity_id}:
+  /video-personalized/list:
     get:
       consumes:
       - application/json
       parameters:
       - description: EntityID
-        in: path
-        name: entity_id
+        in: header
+        name: x-entity-id
         required: true
         type: string
       produces:
