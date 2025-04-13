@@ -1,47 +1,79 @@
 # Video Ranking Microservice
 
-Dự án này là một microservice để xếp hạng video dựa trên các tương tác như lượt xem, lượt thích, bình luận, chia sẻ và thời gian xem. Hệ thống hỗ trợ xếp hạng toàn cầu và cá nhân hóa cho người dùng và người sáng tạo.
+This project is a microservice designed to rank videos based on interactions such as views, likes, comments, shares, and watch time. The system supports both global ranking and personalized ranking for users and creators.
 
-## Tính năng
-- Cập nhật điểm số video real-time dựa trên các tương tác người dùng.
-- Xếp hạng video toàn cầu.
-- Xếp hạng video cá nhân hóa cho từng người dùng hoặc người sáng tạo.
-- Cung cấp API để lấy danh sách video xếp hạng.
+## Tech Stack
+- Golang
+- PostgreSQL
+- Redis
+- Gin
+- Gorm
+- Swagger (OpenAPI)
+- Cron
+- AWS EC2
 
-## Cài đặt
+## Features
+- Real-time video score updates.
+- Global video ranking.
+- Personalized video ranking for each user or creator.
+- API to retrieve ranked video lists.
+- Swagger API Documentation (OpenAPI).
 
-1. Clone repository về máy:
+## Features Not Implemented
+- Unit tests.
+
+## Installation
+
+1. Clone the repository:
     ```bash
-    git clone https://github.com/username/video-ranking-microservice.git
-    cd video-ranking-microservice
+    git clone https://github.com/LgThinh/video-ranking-microservice.git
+    cd video-ranking-service
     ```
 
-2. Cài đặt các phụ thuộc:
+2. Install dependencies:
     ```bash
     go mod tidy
     ```
 
-3. Cấu hình các biến môi trường:
-    - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
-    - `REDIS_HOST`, `REDIS_PORT`
+3. Download the `.env` file and place it at the same level as the `go.mod` file, or configure the variables in the config.go file:
+   - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
+   - `REDIS_HOST`, `REDIS_PORT`
 
-4. Chạy dịch vụ:
+4. Run the service:
     ```bash
     go run main.go
     ```
 
-Dịch vụ sẽ chạy tại `http://localhost:8080`.
+5. Access Swagger at: [http://localhost:8080/api/v1/swagger/index.html#](http://localhost:8080/api/v1/swagger/index.html#)
 
-## Cách sử dụng
+## System Architecture Diagram
 
-### Cập nhật điểm số video
+Here is the system architecture diagram illustrating how the microservice works:
 
-Sử dụng API `PUT /score/update` để cập nhật điểm số video.
+![System Architecture](assets/system_architecture.png)
 
-Ví dụ:
-```bash
-curl -X PUT http://localhost:8080/score/update -d '{
-  "video_id": "12345",
-  "views": 100,
-  "likes": 50
-}'
+## System Description
+
+### Video Score Update Process
+- Each time there is a new interaction (e.g., view, like, comment) on a video, the video score is updated in **real-time** in Redis.
+- A cron job runs every minute to synchronize the scores into **PostgreSQL** for persistent storage.
+- The video score is calculated based on various interaction factors (e.g., views, likes, comments, etc.), and each interaction contributes to a weighted score for the video.
+
+### Entity Priority Score
+- In addition to the video score, each **entity** (user or creator) has a **priority score** based on their interactions with videos from specific categories.
+- For example, if an entity interacts frequently with videos in the **Sports** category, their priority score will increase for those types of videos.
+- This priority score is used to personalize the video ranking for each entity, ensuring that videos are sorted by the entity’s preferences. This allows for a personalized ranking of videos based on the entity’s interaction history and interests.
+
+### Global Ranking
+- The global ranking lists videos based on their accumulated scores, which take into account interactions from all users and creators.
+
+### Personalized Ranking
+- In addition to global ranking, the system provides **personalized rankings** for each user or creator, factoring in their individual interaction history with the videos.
+- This enables users to see the top videos that align with their preferences and interaction patterns.
+
+---
+
+## Contact
+- Email: giathinh1112@gmail.com
+- PhoneNumber: +84 961 319 096
+- Github: https://github.com/LgThinh

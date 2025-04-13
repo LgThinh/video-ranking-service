@@ -91,7 +91,6 @@ func (s *VideoRankingService) GetEntityRanking(ctx context.Context, entityID uui
 	for _, video := range *videos {
 		finalScore := video.Score
 
-		// Kiểm tra xem user có preference với category này không
 		entityPreference, err := s.videoRankingRepo.GetEntityPreference(tx, entityID, video.CategoryID)
 		if err == nil && entityPreference != nil {
 			entityPriority := 1.0 + float64(entityPreference.Priority)*0.01
@@ -104,7 +103,6 @@ func (s *VideoRankingService) GetEntityRanking(ctx context.Context, entityID uui
 		})
 	}
 
-	// Sắp xếp tất cả video theo finalScore
 	sort.Slice(scored, func(i, j int) bool {
 		return scored[i].FinalScore > scored[j].FinalScore
 	})
