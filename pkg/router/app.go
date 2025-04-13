@@ -28,14 +28,21 @@ import (
 
 func NewRouter() {
 	router := gin.Default()
-	router.Use(limit.MaxAllowed(200))
-	configCors := cors.DefaultConfig()
-	configCors.AllowOrigins = []string{"*"}
+
+	configCors := cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "x-entity-id"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}
 
 	db := initPostgres()
 	redisClient := initRedis()
 
 	router.Use(cors.New(configCors))
+	router.Use(limit.MaxAllowed(200))
 
 	err := cron.CronSync(db, redisClient)
 	if err != nil {
@@ -64,14 +71,15 @@ func ApplicationV1Router(router *gin.Engine, db *gorm.DB, redisClient *redis.Cli
 	routerV1.POST("/internal/migrate", middlewares.AuthJWTMiddleware(), migrateHandler.MigratePublic)
 
 	// Video Ranking Apis
-	routerV1.PUT("/score/update/:id", videoRankingHandler.UpdateVideoScore)
-	routerV1.GET("/video-global", videoRankingHandler.GetTopVideoGlobal)
-	routerV1.GET("/video-personalized/:id", videoRankingHandler.GetTopVideoPersonalized)
+	routerV1.PUT("/score/update", videoRankingHandler.UpdateVideoScore)
+	routerV1.PUT("/entity-preference/update", videoRankingHandler.UpdateEntityPreference)
+	routerV1.GET("/video-global/list", videoRankingHandler.GetTopVideoGlobal)
+	routerV1.GET("/video-personalized/list", videoRankingHandler.GetTopVideoPersonalized)
 
 	// Swagger
 	ginSwaggerDocs.SwaggerInfo.Host = conf.GetConfig().SwaggerHost
 	ginSwaggerDocs.SwaggerInfo.Title = conf.GetConfig().AppName
-	ginSwaggerDocs.SwaggerInfo.BasePath = routerV1.BasePath()
+	ginSwaggerDocs.SwaggerInfo.BasePath = "/api/v1"
 	ginSwaggerDocs.SwaggerInfo.Version = "v1"
 	ginSwaggerDocs.SwaggerInfo.Schemes = []string{"http", "https"}
 

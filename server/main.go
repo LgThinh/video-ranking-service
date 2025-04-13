@@ -9,9 +9,13 @@ import (
 // @in                         header
 // @name                       Authorization
 
-// @securityDefinitions.apikey User ID
+// @securityDefinitions.apikey EntityID
 // @in                         header
-// @name                       x-user-id
+// @name                       x-entity-id
+
+// @securityDefinitions.apikey VideoID
+// @in                         header
+// @name                       x-video-id
 func main() {
 	conf.LoadConfig()
 	router.NewRouter()

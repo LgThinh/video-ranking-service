@@ -20,55 +20,97 @@ func NewVideoRankingService(videoRankingRepo repo.VideoRankingRepoInterface) *Vi
 }
 
 type VideoRankingServiceInterface interface {
-	UpdateVideoScore(ctx context.Context, videoID, entityID uuid.UUID, req model.UpdateScoreVideo) error
-	GetGlobalRanking(ctx context.Context) []string
-	GetEntityRanking(ctx context.Context, entityID string) []string
+	UpdateVideoScore(ctx context.Context, videoID uuid.UUID, req model.UpdateScoreVideo) error
+	UpdateEntityPreference(ctx context.Context, videoID, entityID uuid.UUID, req model.UpdateEntityPreference) error
+	GetGlobalRanking(ctx context.Context) (*[]model.Video, error)
+	GetEntityRanking(ctx context.Context, entityID uuid.UUID) (*[]model.Video, error)
 }
 
-func (s *VideoRankingService) UpdateVideoScore(ctx context.Context, videoID, entityID uuid.UUID, req model.UpdateScoreVideo) error {
+func (s *VideoRankingService) UpdateVideoScore(ctx context.Context, videoID uuid.UUID, req model.UpdateScoreVideo) error {
 	score := utils.CalculateScore(req)
-	s.videoRankingRepo.UpdateGlobalRanking(ctx, videoID, score)
+
+	err := s.videoRankingRepo.UpdateScoreInRedis(ctx, videoID, score)
+	if err != nil {
+		return err
+	}
+
+	err = s.videoRankingRepo.UpdateStatsInRedis(ctx, videoID, req)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (s *VideoRankingService) GetGlobalRanking(ctx context.Context) []string {
-	videos := s.videoRankingRepo.GetGlobalRanking(ctx, 10)
-	ids := []string{}
-	for _, z := range videos {
-		ids = append(ids, z.Member.(string))
+func (s *VideoRankingService) UpdateEntityPreference(ctx context.Context, videoID, entityID uuid.UUID, req model.UpdateEntityPreference) error {
+	txWithTimeout, cancel := s.videoRankingRepo.DBWithTimeout(ctx)
+	defer cancel()
+
+	video, err := s.videoRankingRepo.GetVideoByID(txWithTimeout, videoID)
+	if err != nil {
+		return nil
 	}
-	return ids
+
+	newPriority := utils.CalculatePriority(req)
+	err = s.videoRankingRepo.UpdateEntityPreference(txWithTimeout, entityID, video.CategoryID, newPriority)
+	if err != nil {
+		return nil
+	}
+
+	err = s.videoRankingRepo.UpsertInteraction(txWithTimeout, entityID, videoID, &req)
+	if err != nil {
+		return nil
+	}
+
+	return nil
 }
 
-func (s *VideoRankingService) GetEntityRanking(ctx context.Context, entityID string) []string {
-	videos := s.videoRankingRepo.GetGlobalRanking(ctx, 100)
-	result := make([]struct {
-		ID   string
-		Real float64
-	}, 0)
+func (s *VideoRankingService) GetGlobalRanking(ctx context.Context) (*[]model.Video, error) {
+	txWithTimeout, cancel := s.videoRankingRepo.DBWithTimeout(ctx)
+	defer cancel()
 
-	for _, z := range videos {
-		videoID := z.Member.(string)
-
-		categoryID, err := s.videoRankingRepo.GetCategoryIDByVideoID(ctx, videoID)
-		if err != nil {
-			continue
-		}
-		priority := s.videoRankingRepo.GetPriority(ctx, entityID, categoryID)
-		finalScore := z.Score * (1 + float64(priority)*0.01)
-		result = append(result, struct {
-			ID   string
-			Real float64
-		}{videoID, finalScore})
+	videos, err := s.videoRankingRepo.GetTopVideoGlobal(txWithTimeout)
+	if err != nil {
+		return nil, err
 	}
 
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Real > result[j].Real
+	return videos, nil
+}
+
+func (s *VideoRankingService) GetEntityRanking(ctx context.Context, entityID uuid.UUID) (*[]model.Video, error) {
+	tx, cancel := s.videoRankingRepo.DBWithTimeout(ctx)
+	defer cancel()
+
+	videos, err := s.videoRankingRepo.GetTopVideoGlobal(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	scored := make([]model.ScoredVideo, 0, len(*videos))
+
+	for _, video := range *videos {
+		finalScore := video.Score
+
+		entityPreference, err := s.videoRankingRepo.GetEntityPreference(tx, entityID, video.CategoryID)
+		if err == nil && entityPreference != nil {
+			entityPriority := 1.0 + float64(entityPreference.Priority)*0.01
+			finalScore = video.Score * entityPriority
+		}
+
+		scored = append(scored, model.ScoredVideo{
+			Video:      video,
+			FinalScore: finalScore,
+		})
+	}
+
+	sort.Slice(scored, func(i, j int) bool {
+		return scored[i].FinalScore > scored[j].FinalScore
 	})
 
-	top := []string{}
-	for _, v := range result[:10] {
-		top = append(top, v.ID)
+	result := make([]model.Video, 0, len(scored))
+	for _, v := range scored {
+		result = append(result, v.Video)
 	}
-	return top
+
+	return &result, nil
 }
