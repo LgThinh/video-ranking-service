@@ -12,3 +12,7 @@ type Interaction struct {
 	Shared    bool      `json:"shared" gorm:"default:false"`
 	WatchTime int       `json:"watch_time" gorm:"type:int;default:0"`
 }
+
+func (m *Interaction) TableName() string {
+	return "interaction"
+}

@@ -17,15 +17,6 @@ func NewMigrationHandler(db *gorm.DB) *MigrationHandler {
 	return &MigrationHandler{db: db}
 }
 
-// MigratePublic godoc
-// @Summary  Database migration
-// @Tags     internal
-// @Security Authorization
-// @Security Access Token
-// @Security Entity Key
-// @Security User ID
-// @Success  200
-// @Router   /internal/migrate-public [post]
 func (h *MigrationHandler) MigratePublic(ctx *gin.Context) {
 	_ = h.db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`)
 	_ = h.db.Exec(`SET client_encoding = 'UTF8'`)
